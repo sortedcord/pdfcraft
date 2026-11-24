@@ -584,6 +584,17 @@ impl eframe::App for PdfCraftApp {
         }
     }
 
+    /// Fully clear when the window is translucent (`PDFCRAFT_WINDOW_OPACITY`): the panels carry
+    /// the opacity, so eframe's default dark tint must not sit underneath them.
+    fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
+        if theme::window_opacity().is_some() {
+            [0.0; 4]
+        } else {
+            // eframe's default.
+            egui::Color32::from_rgba_unmultiplied(12, 12, 12, 180).to_normalized_gamma_f32()
+        }
+    }
+
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.begin_ui();
         self.guarded_frame(|app| app.ui_unguarded(ui));

@@ -68,8 +68,36 @@ pub struct Tokens {
     pub radius: u8,
 }
 
+/// Opacity of the window's background surfaces, from `PDFCRAFT_WINDOW_OPACITY` (0.0–1.0).
+/// `None` (unset, unparsable or 1.0) keeps the window opaque. When set, the window is created
+/// transparent and the title bar, panels and pasteboard are drawn at this opacity so the desktop
+/// (and any compositor blur) shows through; pages, menus and dialogs stay opaque.
+pub fn window_opacity() -> Option<f32> {
+    static OPACITY: std::sync::OnceLock<Option<f32>> = std::sync::OnceLock::new();
+    *OPACITY.get_or_init(|| {
+        let v: f32 = std::env::var("PDFCRAFT_WINDOW_OPACITY").ok()?.trim().parse().ok()?;
+        (v.is_finite() && v < 1.0).then(|| v.max(0.0))
+    })
+}
+
 impl Tokens {
     pub fn for_kind(kind: ThemeKind) -> Self {
+        let t = Self::opaque(kind);
+        match window_opacity() {
+            Some(a) => t.translucent(a),
+            None => t,
+        }
+    }
+
+    /// The background surfaces at opacity `a`; foreground colours, cards and pages untouched.
+    fn translucent(mut self, a: f32) -> Self {
+        for c in [&mut self.titlebar, &mut self.chrome, &mut self.panel, &mut self.pasteboard, &mut self.hover, &mut self.pressed, &mut self.field] {
+            *c = c.gamma_multiply(a);
+        }
+        self
+    }
+
+    fn opaque(kind: ThemeKind) -> Self {
         match kind {
             ThemeKind::Light => Self {
                 kind,

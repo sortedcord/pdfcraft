@@ -371,6 +371,10 @@ fn native_options(integrated: bool, app_frame: bool, renderer: eframe::Renderer)
         // The tab strip is the title bar (pdfcraft_ui_egui::window_controls).
         viewport = viewport.with_decorations(false);
     }
+    if pdfcraft_ui_egui::theme::window_opacity().is_some() {
+        // An alpha-capable surface; the theme draws the background surfaces translucent.
+        viewport = viewport.with_transparent(true);
+    }
     let persistence_path = settings_dir().map(|d| d.join("app.ron"));
     // Set explicitly, so the renderer never depends on which one eframe defaults to.
     let mut native = eframe::NativeOptions { viewport, persistence_path, renderer, ..Default::default() };
