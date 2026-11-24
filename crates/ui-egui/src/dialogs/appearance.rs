@@ -179,6 +179,24 @@ pub(crate) fn preferences_section_with_context(
         ctx.scroll_if_first_match(&dark_resp, dark_matches);
     });
     ui.add_space(4.0);
+    if theme::WINDOW_OPACITY_SUPPORTED {
+        ui.horizontal(|ui| {
+            let label = ctx.label(ui, tl!("Window opacity"), theme::regular(13.0), t.text);
+            let mut percent = (app.window_opacity * 100.0).round();
+            let min = (theme::MIN_WINDOW_OPACITY * 100.0).round();
+            let slider = ui.add(egui::Slider::new(&mut percent, min..=100.0).step_by(1.0).suffix("%").trailing_fill(true)).labelled_by(label.id);
+            if slider.changed() {
+                app.set_window_opacity(percent / 100.0);
+            }
+        });
+        ctx.label(
+            ui,
+            tl!("Lets the desktop show through the title bar and panels. Pages, menus and dialogs stay opaque."),
+            theme::regular(11.0),
+            t.text_muted,
+        );
+        ui.add_space(4.0);
+    }
     // Acrobat's "Highlight existing fields": shared with the toggle in the form bar.
     ctx.checkbox(ui, &mut app.view_defaults.highlight_fields, tl!("Highlight fields"), t);
 }

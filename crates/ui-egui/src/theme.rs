@@ -68,16 +68,32 @@ pub struct Tokens {
     pub radius: u8,
 }
 
-/// Opacity of the window's background surfaces, from `PDFCRAFT_WINDOW_OPACITY` (0.0–1.0).
-/// `None` (unset, unparsable or 1.0) keeps the window opaque. When set, the window is created
-/// transparent and the title bar, panels and pasteboard are drawn at this opacity so the desktop
-/// (and any compositor blur) shows through; pages, menus and dialogs stay opaque.
+/// Whether this platform's window can be see-through (Preferences ▸ Appearance ▸ Window
+/// opacity). The desktop app creates its window with an alpha channel only here.
+pub const WINDOW_OPACITY_SUPPORTED: bool = cfg!(all(unix, not(target_os = "macos")));
+
+/// The lowest window opacity offered, so the interface never disappears entirely.
+pub const MIN_WINDOW_OPACITY: f32 = 0.3;
+
+/// Opacity of the window's background surfaces, stored as `f32` bits (1.0: opaque).
+static WINDOW_OPACITY: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0x3F80_0000);
+
+/// A usable window opacity: finite and within [`MIN_WINDOW_OPACITY`]..=1.
+pub fn valid_window_opacity(v: f64) -> Option<f32> {
+    v.is_finite().then(|| (v as f32).clamp(MIN_WINDOW_OPACITY, 1.0))
+}
+
+/// Set the window opacity; takes effect at the next [`apply`].
+pub fn set_window_opacity(v: f32) {
+    let v = if WINDOW_OPACITY_SUPPORTED { valid_window_opacity(f64::from(v)).unwrap_or(1.0) } else { 1.0 };
+    WINDOW_OPACITY.store(v.to_bits(), std::sync::atomic::Ordering::Relaxed);
+}
+
+/// The opacity the title bar, panels and pasteboard are drawn at, or `None` when the window is
+/// opaque. Pages, menus and dialogs always stay opaque.
 pub fn window_opacity() -> Option<f32> {
-    static OPACITY: std::sync::OnceLock<Option<f32>> = std::sync::OnceLock::new();
-    *OPACITY.get_or_init(|| {
-        let v: f32 = std::env::var("PDFCRAFT_WINDOW_OPACITY").ok()?.trim().parse().ok()?;
-        (v.is_finite() && v < 1.0).then(|| v.max(0.0))
-    })
+    let v = f32::from_bits(WINDOW_OPACITY.load(std::sync::atomic::Ordering::Relaxed));
+    (v < 1.0).then_some(v)
 }
 
 impl Tokens {

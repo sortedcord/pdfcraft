@@ -116,6 +116,7 @@ impl PdfCraftApp {
             motion: motion::Motion::default(),
             language: i18n::AUTO.to_string(),
             ui_scale: None,
+            window_opacity: 1.0,
             system_text_scale: 1.0,
             ui_scale_applied: None,
             flatten_fill_sign_on_save: false,
@@ -584,15 +585,11 @@ impl eframe::App for PdfCraftApp {
         }
     }
 
-    /// Fully clear when the window is translucent (`PDFCRAFT_WINDOW_OPACITY`): the panels carry
-    /// the opacity, so eframe's default dark tint must not sit underneath them.
+    /// Fully clear when the window is translucent (Preferences ▸ Appearance ▸ Window opacity):
+    /// the panels carry the opacity, so nothing may tint underneath them. Opaque otherwise, as
+    /// the window may have an alpha channel either way.
     fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
-        if theme::window_opacity().is_some() {
-            [0.0; 4]
-        } else {
-            // eframe's default.
-            egui::Color32::from_rgba_unmultiplied(12, 12, 12, 180).to_normalized_gamma_f32()
-        }
+        if theme::window_opacity().is_some() { [0.0; 4] } else { egui::Color32::from_rgb(12, 12, 12).to_normalized_gamma_f32() }
     }
 
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {

@@ -404,6 +404,9 @@ pub struct PdfCraftApp {
     pub language: String,
     /// Preferences ▸ Interface size as a factor, or `None` to follow [`Self::system_text_scale`].
     pub ui_scale: Option<f32>,
+    /// Preferences ▸ Appearance ▸ Window opacity: the background surfaces' opacity, 1.0 opaque.
+    /// Set through [`PdfCraftApp::set_window_opacity`].
+    pub window_opacity: f32,
     /// The desktop's text scaling (GNOME's text scaling factor), which the desktop app reads at
     /// launch. 1.0 elsewhere, so tests and screenshots don't depend on the machine.
     pub system_text_scale: f32,

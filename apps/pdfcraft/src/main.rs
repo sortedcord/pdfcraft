@@ -371,8 +371,9 @@ fn native_options(integrated: bool, app_frame: bool, renderer: eframe::Renderer)
         // The tab strip is the title bar (pdfcraft_ui_egui::window_controls).
         viewport = viewport.with_decorations(false);
     }
-    if pdfcraft_ui_egui::theme::window_opacity().is_some() {
-        // An alpha-capable surface; the theme draws the background surfaces translucent.
+    if pdfcraft_ui_egui::theme::WINDOW_OPACITY_SUPPORTED {
+        // An alpha-capable surface, so Preferences ▸ Appearance ▸ Window opacity applies live;
+        // while it is 100 % the app clears and paints every pixel opaque.
         viewport = viewport.with_transparent(true);
     }
     let persistence_path = settings_dir().map(|d| d.join("app.ron"));

@@ -48,6 +48,17 @@ impl PdfCraftApp {
         }
     }
 
+    /// Preferences ▸ Appearance ▸ Window opacity: how see-through the title bar, panels and
+    /// pasteboard are (1.0 opaque). Applies immediately; pages, menus and dialogs stay opaque.
+    pub fn set_window_opacity(&mut self, opacity: f32) {
+        theme::set_window_opacity(opacity);
+        self.window_opacity = theme::window_opacity().unwrap_or(1.0);
+        if let Some(ctx) = self.ctx.clone() {
+            theme::apply(&ctx, self.theme);
+            ctx.request_repaint();
+        }
+    }
+
     /// The app-wide reading-colours preference: sets it and applies it to every open document,
     /// not just the active one (Preferences ▸ Reading colours, Acrobat's Replace Document
     /// Colors). A document the change actually touches re-renders.
@@ -117,6 +128,7 @@ impl PdfCraftApp {
             "reading_colors": self.reading_colors,
             // Null follows the system's text scaling.
             "ui_scale": self.ui_scale,
+            "window_opacity": self.window_opacity,
             "flatten_fill_sign": self.flatten_fill_sign_on_save,
             "ask_to_lock_signatures": self.ask_to_lock_signatures,
             "fill_text_size": self.fill_text_size,
@@ -477,6 +489,10 @@ impl PdfCraftApp {
         }
         // Settings are untrusted: a size out of range follows the system instead.
         self.ui_scale = v["ui_scale"].as_f64().and_then(ui_scale::valid);
+        // Settings are untrusted: out of range is clamped, anything else keeps the window opaque.
+        if let Some(opacity) = v["window_opacity"].as_f64().and_then(theme::valid_window_opacity) {
+            self.set_window_opacity(opacity);
+        }
         // Settings are untrusted: an unusable pattern keeps the default.
         if let Some(f) = v["date_format"].as_str() {
             let _ = self.session.set_date_format(f);
